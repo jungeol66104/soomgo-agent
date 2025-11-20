@@ -87,7 +87,8 @@ try {
     Write-Host "✗ Failed to download data" -ForegroundColor Red
     Write-Host "URL: $DATA_URL" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "You can download data manually later" -ForegroundColor Yellow
+    Write-Host "Installation failed. The app requires conversation data to function." -ForegroundColor Red
+    exit 1
 }
 
 # Step 5: Extract data (requires tar, available in Windows 10+)
@@ -98,13 +99,47 @@ if (Test-Path $DATA_PATH) {
     $SOOMGO_DIR = Join-Path $env:USERPROFILE ".soomgo"
     New-Item -ItemType Directory -Force -Path $SOOMGO_DIR | Out-Null
 
-    try {
-        tar -xzf $DATA_PATH -C $SOOMGO_DIR
-        Write-Host "✓ Data extracted to $SOOMGO_DIR\data" -ForegroundColor Green
-    } catch {
-        Write-Host "✗ Failed to extract data" -ForegroundColor Red
-        Write-Host "Please extract manually to: $SOOMGO_DIR" -ForegroundColor Yellow
+    # Check if tar is available
+    if (-not (Get-Command tar -ErrorAction SilentlyContinue)) {
+        Write-Host "✗ tar command not found. Windows 10+ required." -ForegroundColor Red
+        Write-Host "Please upgrade to Windows 10 or later, or extract manually" -ForegroundColor Yellow
+        exit 1
     }
+
+    # Extract with error checking
+    $extractOutput = tar -xzf $DATA_PATH -C $SOOMGO_DIR 2>&1
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "✗ Failed to extract data" -ForegroundColor Red
+        Write-Host "Error: $extractOutput" -ForegroundColor Red
+        exit 1
+    }
+
+    # Validate critical files exist
+    $criticalFiles = @(
+        "$SOOMGO_DIR\data\knowledge\structured\services.json",
+        "$SOOMGO_DIR\data\knowledge\structured\policies.json",
+        "$SOOMGO_DIR\data\chat_list_master.jsonl"
+    )
+
+    $missingFiles = @()
+    foreach ($file in $criticalFiles) {
+        if (-not (Test-Path $file)) {
+            $missingFiles += $file
+        }
+    }
+
+    if ($missingFiles.Count -gt 0) {
+        Write-Host "✗ Data extraction incomplete. Missing files:" -ForegroundColor Red
+        foreach ($file in $missingFiles) {
+            Write-Host "  - $file" -ForegroundColor Red
+        }
+        Write-Host ""
+        Write-Host "Installation failed. Please report this issue at:" -ForegroundColor Yellow
+        Write-Host "https://github.com/$GITHUB_REPO/issues" -ForegroundColor Yellow
+        exit 1
+    }
+
+    Write-Host "✓ Data extracted and validated successfully" -ForegroundColor Green
 
     # Cleanup data temp
     Remove-Item -Recurse -Force $DATA_TEMP_DIR
