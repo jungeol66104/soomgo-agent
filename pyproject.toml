@@ -1,0 +1,57 @@
+[project]
+name = "soomgo-agent"
+version = "0.1.0"
+description = "AI-powered autonomous Soomgo provider assistant"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "loguru>=0.7.3",
+    "playwright>=1.55.0",
+    "pydantic>=2.12.3",
+    "python-dotenv>=1.2.1",
+    "rich>=14.2.0",
+    "dspy-ai>=2.5.0",
+    "openai>=1.0.0",
+    "langgraph>=0.2.0",
+    "langchain>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langchain-core>=0.3.0",
+    "prompt-toolkit>=3.0.0",
+    "click>=8.1.0",
+    "psutil>=6.0.0",
+    "textual>=0.47.0",
+    "pyyaml>=6.0.0",
+    "requests>=2.31.0",
+    "packaging>=23.0",
+]
+
+[project.scripts]
+soomgo-dev = "src.cli.main:dev_cli"
+soomgo = "src.cli.main:prod_cli"
+
+[tool.uv]
+package = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+exclude = [
+    "soomgo",
+    "soomgo-dev",
+]
+
+[tool.hatch.build.targets.sdist]
+exclude = [
+    "export",
+    "data",
+    "tests",
+    "docs",
+    ".claude",
+    "test_*.py",
+    "run_messages_skip.py",
+    "soomgo",
+    "soomgo-dev",
+]
