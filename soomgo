@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Soomgo Chat CLI - Quick launcher
+
+# Get the directory where this script is located
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Change to project directory and run chat
+cd "$SCRIPT_DIR" && uv run python src/cli/chat.py

@@ -1,0 +1,37 @@
+# Environment variables
+.env
+
+# Session files (contains cookies)
+session/
+
+# Logs
+logs/
+
+# Data exports
+data/
+
+# Dev runtime directories
+db/
+config/
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,4 @@
+# VF-Data Export Dependencies
+
+pydantic>=2.12.3
+python-dotenv>=1.2.1

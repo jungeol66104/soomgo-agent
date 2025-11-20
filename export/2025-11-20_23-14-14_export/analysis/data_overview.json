@@ -1,0 +1,95 @@
+{
+  "generated_at": "2025-11-20T23:14:22.783511",
+  "completeness": {
+    "total_chats": 16102,
+    "scraped_count": 16102,
+    "missing_count": 0,
+    "completion_rate": 100.0,
+    "missing_chats": []
+  },
+  "services": {
+    "total_unique": 8,
+    "distribution": [
+      {
+        "service": "이력서/자소서 컨설팅",
+        "count": 7586,
+        "percentage": 47.11
+      },
+      {
+        "service": "면접 컨설팅",
+        "count": 5225,
+        "percentage": 32.45
+      },
+      {
+        "service": "취업 컨설팅",
+        "count": 2741,
+        "percentage": 17.02
+      },
+      {
+        "service": "포트폴리오 컨설팅",
+        "count": 519,
+        "percentage": 3.22
+      },
+      {
+        "service": "대학입시자소서 컨설팅",
+        "count": 17,
+        "percentage": 0.11
+      },
+      {
+        "service": "커리어 컨설팅",
+        "count": 12,
+        "percentage": 0.07
+      },
+      {
+        "service": "해외취업 컨설팅",
+        "count": 1,
+        "percentage": 0.01
+      },
+      {
+        "service": "대학원입시 컨설팅",
+        "count": 1,
+        "percentage": 0.01
+      }
+    ]
+  },
+  "hiring_stats": {
+    "hired_count": 989,
+    "not_hired_count": 15113,
+    "hiring_rate": 6.14
+  },
+  "price_stats": {
+    "min": 5000,
+    "max": 200000,
+    "avg": 44102.91,
+    "median": 10000.0
+  },
+  "user_stats": {
+    "left_users": 1132,
+    "left_percentage": 7.03,
+    "banned_users": 41,
+    "banned_percentage": 0.25,
+    "dormant_users": 0,
+    "dormant_percentage": 0.0
+  },
+  "temporal_stats": {
+    "created_at_range": {
+      "oldest": "2020-08-19T09:12:21",
+      "newest": "2025-11-03T14:52:29.859000"
+    },
+    "updated_at_range": {
+      "oldest": "2020-08-21T07:30:43.219000",
+      "newest": "2025-11-03T15:01:16.317000"
+    },
+    "updated_at_span_days": 1900
+  },
+  "message_stats": {
+    "total_messages": 285864,
+    "total_conversations": 16102,
+    "total_chars": 24388806,
+    "messages_with_content": 285850,
+    "avg_messages_per_chat": 17.75,
+    "min_messages_per_chat": 0,
+    "max_messages_per_chat": 1417,
+    "avg_message_length": 85.32
+  }
+}

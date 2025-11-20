@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Soomgo Agent - Development Mode Launcher
+
+# Resolve symlink and get the actual script location
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
+# Run dev CLI directly
+cd "$SCRIPT_DIR" && uv run python "$SCRIPT_DIR/src/cli/dev_entry.py" "$@"

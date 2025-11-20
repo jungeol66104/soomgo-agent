@@ -1,0 +1,21 @@
+{
+  "generated_at": "2025-11-20T23:14:22.783499",
+  "dataset_info": {
+    "total_chats": 16102,
+    "messages_scraped": 16102,
+    "completion_rate": 100.0,
+    "missing_count": 0
+  },
+  "filter_info": {
+    "description": "Chats filtered by updated_at (last activity)",
+    "updated_at_range": "2020-08-21T07:30:43.219000 to 2025-11-03T15:01:16.317000",
+    "updated_at_span_days": 1900
+  },
+  "top_insights": {
+    "most_common_service": "이력서/자소서 컨설팅",
+    "hiring_rate": 6.14,
+    "created_at_range": "2020-08-19T09:12:21 to 2025-11-03T14:52:29.859000",
+    "total_messages": 285864,
+    "avg_messages_per_chat": 17.75
+  }
+}
