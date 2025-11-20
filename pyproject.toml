@@ -26,7 +26,6 @@ dependencies = [
 ]
 
 [project.scripts]
-soomgo-dev = "src.cli.main:dev_cli"
 soomgo = "src.cli.main:prod_cli"
 
 [tool.uv]

@@ -9,8 +9,8 @@ from datetime import datetime
 from textual.app import App, ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical, VerticalScroll, Center
-from textual.widgets import Footer, Header, Label, ListItem, ListView, Static, Input, Button
-from textual.screen import Screen, ModalScreen
+from textual.widgets import Footer, Header, Label, ListItem, ListView, Static, Input
+from textual.screen import Screen
 from rich.text import Text
 
 from src.scraper.central_db import CentralChatDatabase
@@ -48,76 +48,89 @@ def wrap_message_text(text: str, width: int = 75) -> str:
     return '\n'.join(wrapped_lines)
 
 
-class SetupScreen(ModalScreen):
+class SetupScreen(Screen):
     """First-run setup screen for API key configuration."""
-
-    BINDINGS = [
-        Binding("escape", "cancel", "Cancel"),
-    ]
 
     CSS = """
     SetupScreen {
-        align: center middle;
+        layout: vertical;
     }
 
-    #setup-dialog {
-        width: 60;
-        height: auto;
-        border: thick $background 80%;
-        background: $surface;
-        padding: 2;
+    #setup-content {
+        height: 1fr;
     }
 
-    #setup-title {
-        text-align: center;
-        text-style: bold;
-        color: $accent;
-    }
-
-    #api-key-input {
-        width: 100%;
-    }
-
-    #save-button {
-        width: 100%;
+    #footer {
+        dock: bottom;
+        height: 1;
     }
     """
+
+    BINDINGS = [
+        Binding("q", "cancel", "Quit"),
+        Binding("c", "clear", "Clear"),
+    ]
 
     def __init__(self, env):
         super().__init__()
         self.env = env
 
     def compose(self) -> ComposeResult:
+        yield Static("First-time Setup", id="header")
         yield Container(
-            Static("First-time Setup", id="setup-title"),
             Static(""),
             Static("OpenAI API Key:"),
-            Input(placeholder="sk-...", password=True, id="api-key-input"),
-            Static(""),
-            Button("Save & Continue", variant="primary", id="save-button"),
-            id="setup-dialog",
+            Input(value="", placeholder="sk-...", password=True, id="api-key-input", compact=True, classes="-textual-compact"),
+            id="setup-content"
         )
+        yield Static("Enter: save  |  c: clear  |  q: quit", id="footer")
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle save button press."""
-        if event.button.id == "save-button":
-            api_key_input = self.query_one("#api-key-input", Input)
-            api_key = api_key_input.value.strip()
-
-            if not api_key:
-                self.app.notify("API key cannot be empty", severity="error")
+    def on_key(self, event) -> None:
+        """Handle key presses globally (before Input widget processes them)."""
+        # Only intercept if input is NOT focused (so users can type these letters)
+        api_key_input = self.query_one("#api-key-input", Input)
+        if api_key_input.has_focus:
+            # Exception: Escape should unfocus the input
+            if event.key == "escape":
+                event.prevent_default()
+                api_key_input.blur()
                 return
+            return  # Let input handle other keys
 
-            if not api_key.startswith("sk-"):
-                self.app.notify("Invalid API key format", severity="error")
-                return
+        if event.key == "q" or event.key == "escape":
+            event.prevent_default()
+            self.action_cancel()
+        elif event.key == "c":
+            event.prevent_default()
+            self.action_clear()
 
-            # Save API key
-            if set_api_key(self.env, api_key):
-                self.app.notify("Configuration saved!", severity="information")
-                self.dismiss(True)
-            else:
-                self.app.notify("Failed to save configuration", severity="error")
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle Enter key on input."""
+        api_key = event.value.strip()
+
+        if not api_key:
+            self.app.notify("API key cannot be empty", severity="error")
+            return
+
+        if not api_key.startswith("sk-"):
+            self.app.notify("Invalid API key format", severity="error")
+            return
+
+        # Save API key
+        if set_api_key(self.env, api_key):
+            self.app.notify("Configuration saved!", severity="information")
+            # Continue to dashboard
+            self.app.pop_screen()
+            from src.cli.main import env
+            self.app.push_screen(DashboardScreen(env))
+        else:
+            self.app.notify("Failed to save configuration", severity="error")
+
+    def action_clear(self) -> None:
+        """Clear the API key input."""
+        api_key_input = self.query_one("#api-key-input", Input)
+        api_key_input.value = ""
+        api_key_input.focus()
 
     def action_cancel(self) -> None:
         """Cancel setup and quit."""
@@ -127,10 +140,26 @@ class SetupScreen(ModalScreen):
 class SettingsScreen(Screen):
     """Settings screen to view/edit configuration."""
 
+    CSS = """
+    SettingsScreen {
+        layout: vertical;
+    }
+
+    #settings-content {
+        height: 1fr;
+    }
+
+    #footer {
+        dock: bottom;
+        height: 1;
+    }
+    """
+
     BINDINGS = [
         Binding("escape", "back", "Back"),
         Binding("b", "back", "Back"),
         Binding("q", "quit", "Quit"),
+        Binding("c", "clear", "Clear"),
     ]
 
     def __init__(self, env):
@@ -140,14 +169,34 @@ class SettingsScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Static("Settings", id="header")
         yield Container(
+            Static(""),
             Static("OpenAI API Key:"),
-            Static(""),
-            Input(placeholder="sk-...", password=True, id="api-key-input"),
-            Static(""),
-            Button("Save Changes", variant="primary", id="save-button"),
-            id="settings-container",
+            Input(value="", placeholder="sk-...", password=False, id="api-key-input", compact=True, classes="-textual-compact"),
+            id="settings-content"
         )
-        yield Static("Esc/b: back  |  q: quit", id="footer")
+        yield Static("Enter: save  |  c: clear  |  Esc/b: back  |  q: quit", id="footer")
+
+    def on_key(self, event) -> None:
+        """Handle key presses globally (before Input widget processes them)."""
+        # Only intercept if input is NOT focused (so users can type these letters)
+        api_key_input = self.query_one("#api-key-input", Input)
+        if api_key_input.has_focus:
+            # Exception: Escape should still work to unfocus/go back
+            if event.key == "escape":
+                event.prevent_default()
+                api_key_input.blur()
+                return
+            return  # Let input handle other keys
+
+        if event.key == "q":
+            event.prevent_default()
+            self.app.exit()
+        elif event.key == "c":
+            event.prevent_default()
+            self.action_clear()
+        elif event.key == "escape" or event.key == "b":
+            event.prevent_default()
+            self.action_back()
 
     def on_mount(self) -> None:
         """Load current config on mount."""
@@ -155,32 +204,36 @@ class SettingsScreen(Screen):
 
         api_key = get_api_key(self.env)
         if api_key:
-            # Show masked API key
+            # Show API key (not masked)
             api_key_input = self.query_one("#api-key-input", Input)
             api_key_input.value = api_key
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
-        """Handle save button press."""
-        if event.button.id == "save-button":
-            from src.cli.config_manager import set_api_key
+    def on_input_submitted(self, event: Input.Submitted) -> None:
+        """Handle Enter key on input."""
+        from src.cli.config_manager import set_api_key
 
-            api_key_input = self.query_one("#api-key-input", Input)
-            api_key = api_key_input.value.strip()
+        api_key = event.value.strip()
 
-            if not api_key:
-                self.app.notify("API key cannot be empty", severity="error")
-                return
+        if not api_key:
+            self.app.notify("API key cannot be empty", severity="error")
+            return
 
-            if not api_key.startswith("sk-"):
-                self.app.notify("Invalid API key format", severity="error")
-                return
+        if not api_key.startswith("sk-"):
+            self.app.notify("Invalid API key format", severity="error")
+            return
 
-            # Save API key
-            if set_api_key(self.env, api_key):
-                self.app.notify("Settings saved!", severity="information")
-                self.app.pop_screen()
-            else:
-                self.app.notify("Failed to save settings", severity="error")
+        # Save API key
+        if set_api_key(self.env, api_key):
+            self.app.notify("Settings saved!", severity="information")
+            self.app.pop_screen()
+        else:
+            self.app.notify("Failed to save settings", severity="error")
+
+    def action_clear(self) -> None:
+        """Clear the API key input."""
+        api_key_input = self.query_one("#api-key-input", Input)
+        api_key_input.value = ""
+        api_key_input.focus()
 
     def action_back(self) -> None:
         """Go back to dashboard."""
@@ -197,6 +250,54 @@ class MenuListItem(ListItem):
 
     def compose(self) -> ComposeResult:
         yield Label(self.menu_label)
+
+
+class LogViewerScreen(Screen):
+    """Screen to view logs."""
+
+    BINDINGS = [
+        Binding("escape", "back", "Back"),
+        Binding("b", "back", "Back"),
+        Binding("q", "quit", "Quit"),
+    ]
+
+    def __init__(self, env):
+        super().__init__()
+        self.env = env
+
+    def compose(self) -> ComposeResult:
+        yield Static("Logs", id="header")
+        yield VerticalScroll(id="log-container")
+        yield Static("Esc/b: back  |  q: quit", id="footer")
+
+    def on_mount(self) -> None:
+        """Load error logs."""
+        self.load_logs()
+
+    def load_logs(self) -> None:
+        """Load and display error logs."""
+        container = self.query_one("#log-container")
+        error_log_path = self.env.logs_dir / "simulation_errors.log"
+
+        if not error_log_path.exists():
+            container.mount(Label("No errors logged yet"))
+            return
+
+        try:
+            with open(error_log_path, 'r') as f:
+                log_content = f.read()
+
+            if not log_content.strip():
+                container.mount(Label("No errors logged yet"))
+            else:
+                # Display log content
+                container.mount(Label(log_content))
+        except Exception as e:
+            container.mount(Label(f"Error reading log: {str(e)}"))
+
+    def action_back(self) -> None:
+        """Go back to dashboard."""
+        self.app.pop_screen()
 
 
 class DashboardScreen(Screen):
@@ -258,8 +359,10 @@ class DashboardScreen(Screen):
         list_view.append(MenuListItem("stop", "Stop (coming soon)"))
         list_view.append(MenuListItem("status", "Status (coming soon)"))
         list_view.append(MenuListItem("separator2", ""))
-        list_view.append(MenuListItem("settings", "Settings"))
         list_view.append(MenuListItem("chats", "Chats"))
+        list_view.append(MenuListItem("separator3", ""))
+        list_view.append(MenuListItem("settings", "Settings"))
+        list_view.append(MenuListItem("logs", "Logs"))
 
     def on_list_view_selected(self, event: ListView.Selected) -> None:
         """Handle menu selection."""
@@ -271,13 +374,15 @@ class DashboardScreen(Screen):
                 self.app.push_screen(SettingsScreen(self.env))
             elif menu_item.menu_id == "chats":
                 self.app.push_screen(ChatListScreen(self.env))
+            elif menu_item.menu_id == "logs":
+                self.app.push_screen(LogViewerScreen(self.env))
             elif menu_item.menu_id == "run":
                 self.app.notify("Coming soon: Start daemon", severity="information")
             elif menu_item.menu_id == "stop":
                 self.app.notify("Coming soon: Stop daemon", severity="information")
             elif menu_item.menu_id == "status":
                 self.app.notify("Coming soon: Show status", severity="information")
-            elif menu_item.menu_id in ["separator", "separator2"]:
+            elif menu_item.menu_id in ["separator", "separator2", "separator3"]:
                 # Separator - do nothing
                 pass
 
@@ -474,11 +579,23 @@ class SimulationListScreen(Screen):
         import threading
         import sys
         import io
+        import traceback
 
         simulations_dir = self.env.data_dir / "simulations"
         runner = SimulationRunner(self.env.messages_dir, simulations_dir)
 
+        # Create error log file
+        error_log_path = self.env.logs_dir / "simulation_errors.log"
+
         def run_in_thread():
+            # Load API key from config and set as environment variable
+            import os
+            from src.cli.config_manager import get_api_key
+
+            api_key = get_api_key(self.env)
+            if api_key:
+                os.environ["OPENAI_API_KEY"] = api_key
+
             # Suppress all logging output during simulation
             import logging
             logging.getLogger().setLevel(logging.CRITICAL)
@@ -506,7 +623,17 @@ class SimulationListScreen(Screen):
                 # Restore output for error reporting
                 sys.stdout = old_stdout
                 sys.stderr = old_stderr
-                print(f"Simulation error: {e}")
+
+                # Log error to file
+                with open(error_log_path, 'a') as f:
+                    f.write(f"\n{'='*80}\n")
+                    f.write(f"Simulation Error - Chat #{self.chat_id}\n")
+                    f.write(f"Time: {datetime.now()}\n")
+                    f.write(f"Error: {str(e)}\n")
+                    f.write(f"Traceback:\n{traceback.format_exc()}\n")
+
+                # Show notification (will appear in TUI)
+                self.app.notify(f"Simulation failed: {str(e)}", severity="error", timeout=10)
             finally:
                 # Restore output
                 sys.stdout = old_stdout
