@@ -88,7 +88,7 @@ class SoomgoAgent:
 
         # Initialize knowledge retriever
         logger.info("Initializing knowledge retriever...")
-        self.retriever = KnowledgeRetriever()
+        self.retriever = KnowledgeRetriever(data_dir=str(self.config.knowledge_dir))
 
         self.graph = self._build_graph()
 
